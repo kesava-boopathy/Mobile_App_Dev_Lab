@@ -1,49 +1,68 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, ImageBackground, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, Alert, StyleSheet, ImageBackground } from 'react-native';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+
+const TARGET_LAT = 9.8821;
+const TARGET_LON = 78.0816;
+const RADIUS_METERS = 50;
 
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Ask permission for notifications when component runs
-  Notifications.requestPermissionsAsync();
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
-  });
-
-  const getLocationAndNotify = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Location permission is needed to continue.');
-      return;
-    }
-
-    let location = await Location.getCurrentPositionAsync({});
-    console.log(location);
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Location Retrieved!',
-        body: `Lat: ${location.coords.latitude}, Lon: ${location.coords.longitude}`,
-      },
-      trigger: null,
+  useEffect(() => {
+    Notifications.requestPermissionsAsync();
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
     });
+  }, []);
+
+  const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   };
 
-  const handleLogin = () => {
-    if (email === '' || password === '') {
-      Alert.alert('Error', 'Please enter both email and password');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
-    Alert.alert('Login Successful', `Welcome, ${email}!`);
-    getLocationAndNotify();
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Location access is required');
+      return;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = location.coords;
+
+    const distance = getDistanceInMeters(latitude, longitude, TARGET_LAT, TARGET_LON);
+
+    if (distance <= RADIUS_METERS) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🎯 You have reached the location!',
+          body: `You're within ${Math.round(distance)} meters of the target.`,
+        },
+        trigger: null,
+      });
+    } else {
+      Alert.alert('Location Not Reached', `You are ${Math.round(distance)} meters away.`);
+    }
   };
 
   return (
@@ -66,7 +85,7 @@ export default function App() {
           value={password}
           onChangeText={setPassword}
         />
-        <Button title="Login" onPress={handleLogin} />
+        <Button title="Login & Check Location" onPress={handleLogin} />
       </View>
     </ImageBackground>
   );
