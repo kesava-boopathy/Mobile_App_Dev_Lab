@@ -7,7 +7,7 @@ import {
 
 const Stack = createNativeStackNavigator();
 
-const HomeScreen = ({ navigation }) => (
+const HomeScreen = ({navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>Welcome to the Event!</Text>
     <TouchableOpacity
@@ -19,28 +19,43 @@ const HomeScreen = ({ navigation }) => (
   </View>
 );
 
-const FeedbackForm = () => {
+const FeedbackForm = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [feedback, setFeedback] = useState('');
 
-  const validateAndSubmit = () => {
-    if (!name || !email || !feedback) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
+ const validateAndSubmit = () => {
+  if (!name || !email || !feedback) {
+    Alert.alert('Error', 'Please fill all fields');
+    return;
+  }
 
-    const emailRegex = /\S+@\S+\.\S+/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email');
-      return;
-    }
+  const emailRegex = /\S+@\S+\.\S+/;
+  if (!emailRegex.test(email)) {
+    Alert.alert('Error', 'Please enter a valid email');
+    return;
+  }
 
-    Alert.alert('Thank You!', 'Your feedback has been submitted');
-    setName('');
-    setEmail('');
-    setFeedback('');
-  };
+  Alert.alert(
+    'Thank You!',
+    'Your feedback has been submitted',
+    [
+      {
+        text: 'OK',
+        onPress: () => {
+          setName('');
+          setEmail('');
+          setFeedback('');
+          setTimeout(() => {
+            navigation.navigate('Home');
+          }, 1000);
+        },
+      },
+    ]
+  );
+};
+
+
 
   return (
     <View style={styles.container}>
