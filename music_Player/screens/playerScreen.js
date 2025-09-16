@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import PlayerControls from '../components/PlayerControls';
+import PlayerControls from '../components/playerControl';
 
 export default function PlayerScreen() {
   const play = () => console.log("Play music");

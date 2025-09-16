@@ -1,9 +1,9 @@
 import React, { useState, createContext } from 'react';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import HomeScreen from './screens/homeScreen.js';
-import PlayerScreen from './screens/playerScreen.js';
-import SettingsScreen from './screens/settingsScreen.js';
+import HomeScreen from './screens/homeScreen';
+import PlayerScreen from './screens/playerScreen';
+import SettingsScreen from './screens/settingScreen';
 
 export const ThemeContext = createContext();
 
