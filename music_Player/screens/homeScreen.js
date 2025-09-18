@@ -6,7 +6,7 @@ export default function HomeScreen() {
   const [tracks, setTracks] = useState([]);
 
   useEffect(() => {
-    fetch("https://itunes.apple.com/search?term=arijit+singh&entity=song&limit=15")
+    fetch('https://itunes.apple.com/search?term=tamil&entity=song&country=in&limit=20')
       .then(res => res.json())
       .then(data => setTracks(data.results))
       .catch(err => console.error(err));
