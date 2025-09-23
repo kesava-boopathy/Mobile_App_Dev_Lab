@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Audio } from 'expo-av';
+import PlayerControls from '../components/playerControl';
 
 export default function PlayerScreen() {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sound, setSound] = useState(null);
-  const [playingTrack, setPlayingTrack] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(null); // index of current track
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // Fetch Tamil music from iTunes API
+  // Fetch Tamil music
   useEffect(() => {
     fetch('https://itunes.apple.com/search?term=tamil&entity=song&limit=15')
       .then((res) => res.json())
@@ -22,28 +24,64 @@ export default function PlayerScreen() {
       });
   }, []);
 
-  // Play sound
-  async function playSound(url, trackName) {
+  // Play track by index
+  async function playTrack(index) {
     try {
-      // Stop any currently playing sound
+      const track = tracks[index];
+      if (!track) return;
+
+      // Stop old sound
       if (sound) {
         await sound.stopAsync();
         await sound.unloadAsync();
       }
 
       console.log('Loading Sound...');
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri: url });
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri: track.previewUrl });
       setSound(newSound);
-      setPlayingTrack(trackName);
+      setCurrentIndex(index);
 
-      console.log('Playing Sound...');
+      console.log('Playing:', track.trackName);
       await newSound.playAsync();
+      setIsPlaying(true);
     } catch (error) {
       console.error('Error playing sound:', error);
     }
   }
 
-  // Cleanup on unmount
+  // Pause
+  async function pauseTrack() {
+    if (sound) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    }
+  }
+
+  // Resume
+  async function resumeTrack() {
+    if (sound) {
+      await sound.playAsync();
+      setIsPlaying(true);
+    } else if (currentIndex !== null) {
+      playTrack(currentIndex);
+    }
+  }
+
+  // Next
+  function playNext() {
+    if (currentIndex !== null && currentIndex < tracks.length - 1) {
+      playTrack(currentIndex + 1);
+    }
+  }
+
+  // Prev
+  function playPrev() {
+    if (currentIndex !== null && currentIndex > 0) {
+      playTrack(currentIndex - 1);
+    }
+  }
+
+  // Cleanup
   useEffect(() => {
     return sound
       ? () => {
@@ -53,15 +91,15 @@ export default function PlayerScreen() {
       : undefined;
   }, [sound]);
 
-  // Render each track
-  const renderItem = ({ item }) => (
+  // Render each track in list
+  const renderItem = ({ item, index }) => (
     <TouchableOpacity
       style={styles.trackItem}
-      onPress={() => playSound(item.previewUrl, item.trackName)}
+      onPress={() => playTrack(index)}
     >
       <Text style={styles.trackTitle}>{item.trackName}</Text>
       <Text style={styles.trackArtist}>{item.artistName}</Text>
-      {playingTrack === item.trackName && <Text style={styles.nowPlaying}>▶ Playing</Text>}
+      {currentIndex === index && isPlaying && <Text style={styles.nowPlaying}>▶ Playing</Text>}
     </TouchableOpacity>
   );
 
@@ -71,11 +109,23 @@ export default function PlayerScreen() {
       {loading ? (
         <ActivityIndicator size="large" color="#6200ee" />
       ) : (
-        <FlatList
-          data={tracks}
-          keyExtractor={(item) => item.trackId.toString()}
-          renderItem={renderItem}
-        />
+        <>
+          <FlatList
+            data={tracks}
+            keyExtractor={(item) => item.trackId.toString()}
+            renderItem={renderItem}
+          />
+
+          {/* Player Controls */}
+          {currentIndex !== null && (
+            <PlayerControls
+              onPlay={resumeTrack}
+              onPause={pauseTrack}
+              onNext={playNext}
+              onPrev={playPrev}
+            />
+          )}
+        </>
       )}
     </View>
   );
