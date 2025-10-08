@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import MusicList from '../components/musicList';
+import MusicList from '../components/MusicList';
 
 export default function HomeScreen() {
   const [tracks, setTracks] = useState([]);
